@@ -7,13 +7,13 @@ import atexit
 from toycomp import ast
 from llvmlite import binding as llvm
 
-from . import parser, pratt, codegen, color
+from . import parser, pratt, codegen, color, nativelib
 
 
 def create_execution_engine():
     target = llvm.Target.from_default_triple()
     target_machine = target.create_target_machine()
-    backing_mod = llvm.parse_assembly('')
+    backing_mod = llvm.parse_assembly(nativelib.code)
     engine = llvm.create_mcjit_compiler(backing_mod, target_machine)
     return engine
 

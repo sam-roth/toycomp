@@ -53,12 +53,56 @@ class Codegen:
 
             if len(expr.args) != len(callee.args):
                 return self.error_value('function {!r} with {} parameters received {} arguments'.format(
-                    expr.func, len(callee.args), len(expr.args)
+                        expr.func, len(callee.args), len(expr.args)
                 ))
 
             argvals = [self.expr(a) for a in expr.args]
 
             return self.builder.call(callee, argvals, name='calltmp')
+        elif isinstance(expr, ast.IfExpr):
+            test_v = self.expr(expr.test)
+
+            if not test_v:
+                return None
+
+            test_v = self.builder.fcmp_ordered('!=', test_v, ir.Constant(ir.DoubleType(), 0.0), name='ifcond')
+
+            func = self.builder.block.parent
+
+            assert isinstance(func, ir.Function)
+
+            true_block = ir.Block(func, name='true')
+            false_block = ir.Block(func, name='false')
+            merge_block = ir.Block(func, name='endif')
+
+            self.builder.cbranch(test_v, true_block, false_block)
+
+            func.blocks.append(true_block)
+            self.builder.position_at_end(true_block)
+            true_v = self.expr(expr.true)
+            if not true_v:
+                return None
+            self.builder.branch(merge_block)
+            # Actual block can be changed by self.expr(...)
+            true_block = self.builder.block
+
+            func.blocks.append(false_block)
+            self.builder.position_at_end(false_block)
+            false_v = self.expr(expr.false)
+            if not false_v:
+                return None
+            self.builder.branch(merge_block)
+            false_block = self.builder.block
+
+            func.blocks.append(merge_block)
+            self.builder.position_at_end(merge_block)
+
+            phi = self.builder.phi(ir.DoubleType(), name='iftmp')
+
+            phi.add_incoming(true_v, true_block)
+            phi.add_incoming(false_v, false_block)
+
+            return phi
         else:
             raise RuntimeError('Unexpected expression type: {!r}'.format(expr))
 
@@ -104,4 +148,3 @@ class Codegen:
             return func
         else:
             raise RuntimeError('Unexpected statement type: {!r}'.format(stmt))
-

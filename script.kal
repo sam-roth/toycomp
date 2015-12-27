@@ -1,0 +1,11 @@
+
+extern putchard(x);
+
+def seq(a b) 0;
+
+def alphabet(n)
+    if n < 26
+        then seq(putchard(n + 97), alphabet(n + 1))
+        else putchard(10);
+
+alphabet(0);

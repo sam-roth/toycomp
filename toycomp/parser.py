@@ -35,6 +35,28 @@ class ExternToken(Token):
         return _parse_proto(parser)
 
 
+@grammar.token(r'\bthen\b')
+class ThenToken(Token):
+    pass
+
+
+@grammar.token(r'\belse\b')
+class ElseToken(Token):
+    pass
+
+
+@grammar.token(r'\bif\b')
+class IfToken(Token):
+    def unary(self, parser):
+        test = parser.expression()
+        parser.expect(ThenToken)
+        true_block = parser.expression()
+        parser.expect(ElseToken)
+        false_block = parser.expression()
+
+        return ast.IfExpr(test, true_block, false_block)
+
+
 @grammar.token(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b')
 class IdentToken(Token):
     def unary(self, parser):
