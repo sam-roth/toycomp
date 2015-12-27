@@ -51,32 +51,36 @@ def main_loop():
                 isinstance(line_tokens[-2], parser.OperatorToken) and
                 line_tokens[-2].value == ';'):
 
-            astval = pratt.Parser(tokens[:-1] + [pratt.EndToken(None)]).parse()
+            try:
+                astval = list(pratt.Parser(tokens[:-1] + [pratt.EndToken(None)]).parse())
+            except SyntaxError as exc:
+                print(color.color('magenta', '{}:{}:{}'.format(exc.lineno, exc.offset, exc)))
+            else:
+                for stmt in astval:
+                    if isinstance(stmt, ast.Stmt):
+                        print(color.color('cyan', cg.stmt(stmt)))
+                    elif isinstance(stmt, ast.Expr):
+                        proto = ast.Prototype('__anon{}'.format(anon_count), [])
+                        anon_count += 1
+                        func = ast.Function(proto, stmt)
+                        code = cg.stmt(func)
+                        if code:
+                            print(color.color('cyan', code))
 
-            for stmt in astval:
-                if isinstance(stmt, ast.Stmt):
-                    print(color.color('cyan', cg.stmt(stmt)))
-                elif isinstance(stmt, ast.Expr):
-                    proto = ast.Prototype('__anon{}'.format(anon_count), [])
-                    anon_count += 1
-                    func = ast.Function(proto, stmt)
-                    code = cg.stmt(func)
-                    if code:
-                        print(color.color('cyan', code))
+                            engine = create_execution_engine()
+                            engine.add_module(llvm.parse_assembly(str(cg.module)))
+                            engine.finalize_object()
 
-                        engine = create_execution_engine()
-                        engine.add_module(llvm.parse_assembly(str(cg.module)))
-                        engine.finalize_object()
+                            pfunc = engine.get_function_address(proto.name)
 
-                        pfunc = engine.get_function_address(proto.name)
+                            cfunc = ctypes.CFUNCTYPE(ctypes.c_double)(pfunc)
 
-                        cfunc = ctypes.CFUNCTYPE(ctypes.c_double)(pfunc)
-
-                        res = cfunc()
-                        print('=>', color.color('green', res))
-
-                else:
-                    raise RuntimeError('expected stmt or expr; got {!r}'.format(stmt))
+                            res = cfunc()
+                            print('=>', color.color('green', res))
+                    elif stmt is None:
+                        pass
+                    else:
+                        raise RuntimeError('expected stmt or expr; got {!r}'.format(stmt))
 
             tokens.clear()
 

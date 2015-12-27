@@ -74,9 +74,17 @@ class Token:
 
     def __init__(self, value):
         self.value = value
+        self.lineno = None
+        self.offset = None
 
     def __repr__(self):
         return '{}({!r})'.format(type(self).__name__, self.value)
+
+    def unary(self, parser):
+        parser.error('no null denotation for token {!r}'.format(self.value))
+
+    def binary(self, parser, left):
+        parser.error('no left denotation for token {!r}'.format(self.value))
 
 
 class EndToken(Token):
@@ -95,6 +103,9 @@ class Tokenizer:
         self._regex = '|'.join('(?P<%s>%s)' % pair for pair in self._spec)
 
     def tokenize(self, text):
+        line_num = 1
+        line_start = 0
+
         for mo in re.finditer(self._regex, text, re.MULTILINE):
             kindname = mo.lastgroup
             value = mo.group(kindname)
@@ -106,7 +117,14 @@ class Tokenizer:
             else:
                 t = self._grammar.tokens[kindname](value)
                 if not t.ignore:
+                    t.lineno = line_num
+                    t.offset = mo.start() - line_start
                     yield t
+
+            value_lines = sum(1 for c in value if c == '\n')
+            if value_lines != 0:
+                line_num += value_lines
+                line_start += max(i for (i, c) in enumerate(value) if c == '\n') + 1
 
         yield EndToken(None)
 
@@ -128,10 +146,16 @@ class Parser:
     def expect(self, tokenty):
         cur = self.token_stream.current()
         if not isinstance(self.token_stream.current(), tokenty):
-            raise RuntimeError('expected {!r}, got {!r}'.format(tokenty.__name__, self.token_stream.current()))
+            self.error('expected {!r}, got {!r}'.format(tokenty.__name__, self.token_stream.current()))
         self.token_stream.next()
         return cur
 
     def parse(self):
         while not isinstance(self.token_stream.current(), EndToken):
             yield self.expression()
+
+    def error(self, msg):
+        se = SyntaxError(msg)
+        se.lineno = self.token_stream.current().lineno
+        se.offset = self.token_stream.current().offset
+        raise se
