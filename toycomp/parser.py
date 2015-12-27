@@ -8,6 +8,14 @@ grammar = Grammar()
 def _parse_proto(parser):
     name = parser.expect(IdentToken).value
 
+    suffix = ''
+    if name in ('unary', 'binary'):
+        suffix = parser.expect(OperatorToken).value
+
+    if name == 'binary':
+        lbp = int(parser.expect(NumberToken).value)
+        OperatorToken.op_lbp[suffix] = lbp
+
     parser.expect(LParenToken)
 
     args = []
@@ -17,7 +25,7 @@ def _parse_proto(parser):
 
     parser.expect(RParenToken)
 
-    return ast.Prototype(name, args)
+    return ast.Prototype(name + suffix, args)
 
 
 @grammar.token(r'\bdef\b')
@@ -105,7 +113,7 @@ class CommaToken(Token):
     pass
 
 
-@grammar.token(r'[^\s]')
+@grammar.token(r'[^\s()a-zA-Z0-9_]+')
 class OperatorToken(Token):
     op_lbp = {
         '<': 10,
@@ -120,6 +128,10 @@ class OperatorToken(Token):
 
     def binary(self, parser, left):
         return ast.BinaryExpr(self.value, left, parser.expression(self.lbp))
+
+    def unary(self, parser):
+        # Emit function call
+        return ast.CallExpr(ast.VariableExpr('unary' + self.value), [parser.expression()])
 
 
 def parse(program):

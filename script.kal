@@ -1,11 +1,24 @@
 
 extern putchard(x);
 
-def seq(a b) 0;
+def unary ! (v)
+    if v
+        then 0
+        else 1;
+
+def binary >= 10 (x y)
+    if !(x < y)
+        then 1
+        else 0;
+
+def binary : 1 (x y) 0;
 
 def alphabet(n)
-    if n < 26
-        then seq(putchard(n + 97), alphabet(n + 1))
-        else putchard(10);
+    if n >= 26
+        then
+            putchard(10)
+        else
+            putchard(n + 97):
+            alphabet(n + 1);
 
 alphabet(0);
