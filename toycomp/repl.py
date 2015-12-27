@@ -56,6 +56,7 @@ def main_loop():
             except SyntaxError as exc:
                 print(color.color('magenta', '{}:{}:{}'.format(exc.lineno, exc.offset, exc)))
             else:
+                print(color.color('blue', repr(astval)))
                 for stmt in astval:
                     if isinstance(stmt, ast.Stmt):
                         print(color.color('cyan', cg.stmt(stmt)))

@@ -32,7 +32,7 @@ def _parse_proto(parser):
 class DefToken(Token):
     def unary(self, parser):
         proto = _parse_proto(parser)
-        body = parser.expression(rbp=1)
+        body = parser.expression()
 
         return ast.Function(proto, body)
 
@@ -63,6 +63,29 @@ class IfToken(Token):
         false_block = parser.expression()
 
         return ast.IfExpr(test, true_block, false_block)
+
+
+@grammar.token(r'\bfor\b')
+class ForToken(Token):
+    def unary(self, parser):
+        name = parser.expect(IdentToken).value
+        parser.expect(OperatorToken('='))
+
+        start = parser.expression()
+        parser.expect(CommaToken)
+
+        end = parser.expression()
+
+        if parser.take(CommaToken):
+            step = parser.expression()
+        else:
+            step = ast.NumberExpr(1)
+
+        parser.expect(IdentToken('in'))
+
+        body = parser.expression()
+
+        return ast.ForExpr(name, start, end, step, body)
 
 
 @grammar.token(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b')

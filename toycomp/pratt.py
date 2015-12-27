@@ -86,6 +86,9 @@ class Token:
     def binary(self, parser, left):
         parser.error('no left denotation for token {!r}'.format(self.value))
 
+    def __eq__(self, other):
+        return isinstance(other, type(self)) and self.value == other.value
+
 
 class EndToken(Token):
     pass
@@ -143,10 +146,27 @@ class Parser:
             left = t.binary(self, left)
         return left
 
+    def take(self, tokenty):
+        cur = self.token_stream.current()
+        if isinstance(tokenty, type):
+            if not isinstance(cur, tokenty):
+                return None
+        else:
+            if tokenty != cur:
+                return None
+
+        self.token_stream.next()
+        return cur
+
     def expect(self, tokenty):
         cur = self.token_stream.current()
-        if not isinstance(self.token_stream.current(), tokenty):
-            self.error('expected {!r}, got {!r}'.format(tokenty.__name__, self.token_stream.current()))
+        if isinstance(tokenty, type):
+            if not isinstance(cur, tokenty):
+                self.error('expected {!r}, got {!r}'.format(tokenty.__name__, cur))
+        else:
+            if tokenty != cur:
+                self.error('expected {!r}, got {!r}'.format(tokenty, cur))
+
         self.token_stream.next()
         return cur
 

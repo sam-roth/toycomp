@@ -11,9 +11,10 @@ VariableExpr = namedtuple('VariableExpr', 'name')
 BinaryExpr = namedtuple('BinaryExpr', 'op lhs rhs')
 CallExpr = namedtuple('CallExpr', 'func args')
 IfExpr = namedtuple('IfExpr', 'test true false')
+ForExpr = namedtuple('ForExpr', 'name start end step body')
 
 
-for t in [NumberExpr, VariableExpr, BinaryExpr, CallExpr, IfExpr]:
+for t in [NumberExpr, VariableExpr, BinaryExpr, CallExpr, IfExpr, ForExpr]:
     Expr.register(t)
 
 

@@ -111,6 +111,52 @@ class Codegen:
             phi.add_incoming(false_v, false_block)
 
             return phi
+        elif isinstance(expr, ast.ForExpr):
+            start_val = self.expr(expr.start)
+
+            if not start_val:
+                return None
+
+            func = self.builder.block.parent
+            pre_header_block = self.builder.block
+            loop_block = func.append_basic_block('loop')
+
+            self.builder.branch(loop_block)
+            self.builder.position_at_end(loop_block)
+
+            var = self.builder.phi(ir.DoubleType(), name=expr.name)
+            var.add_incoming(start_val, pre_header_block)
+
+            sentinel = object()
+            old_val = self.named_values.get(expr.name, sentinel)
+            try:
+                self.named_values[expr.name] = var
+
+                if not self.expr(expr.body):
+                    return None
+
+                step_val = self.expr(expr.step)
+                if not step_val:
+                    return None
+
+                next_var = self.builder.fadd(var, step_val, name='nextvar')
+
+                end_val = self.expr(expr.end)
+                if not end_val:
+                    return None
+
+                end_val = self.builder.fcmp_ordered('!=', end_val, ir.Constant(ir.DoubleType(), 0.0), name='loopcond')
+
+                end_block = func.append_basic_block('endfor')
+
+                var.add_incoming(next_var, self.builder.block)
+                self.builder.cbranch(end_val, loop_block, end_block)
+                self.builder.position_at_end(end_block)
+            finally:
+                if old_val is not sentinel:
+                    self.named_values[expr.name] = old_val
+
+            return ir.Constant(ir.DoubleType(), 0.0)
         else:
             raise RuntimeError('Unexpected expression type: {!r}'.format(expr))
 
