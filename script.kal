@@ -14,7 +14,7 @@ def binary >= 10 (x y)
 def binary : 1 (x y) 0;
 
 def alphabet()
-    (for n = 0, n < 25, 1 in putchard(n + 97)):
+    (for n = 0, n < 26, 1 in putchard(n + 97)):
     putchard(10);
 
 alphabet();

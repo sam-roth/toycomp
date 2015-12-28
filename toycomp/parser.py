@@ -139,6 +139,7 @@ class CommaToken(Token):
 @grammar.token(r'[^\s()a-zA-Z0-9_]+')
 class OperatorToken(Token):
     op_lbp = {
+        '=': 2,
         '<': 10,
         '+': 20,
         '-': 20,

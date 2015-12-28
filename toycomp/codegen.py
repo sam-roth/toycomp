@@ -16,6 +16,10 @@ class Codegen:
         print(color.color('magenta', 'Error: {}'.format(msg)))
         return None
 
+    def add_alloca(self, name):
+        with self.builder.goto_entry_block():
+            return self.builder.alloca(ir.DoubleType(), name=name)
+
     def expr(self, expr):
         if isinstance(expr, ast.NumberExpr):
             return ir.Constant(ir.DoubleType(), expr.value)
@@ -25,8 +29,26 @@ class Codegen:
             except KeyError:
                 value = self.error_value('undeclared variable {!r}'.format(expr.name))
 
-            return value
+            return self.builder.load(value, expr.name)
         elif isinstance(expr, ast.BinaryExpr):
+            # Special-case '=': Don't emit LHS as an expression.
+            if expr.op == '=':
+                if not isinstance(expr.lhs, ast.VariableExpr):
+                    return self.error_value('target of assignment must be a variable name')
+
+                rhs_val = self.expr(expr.rhs)
+                if not rhs_val:
+                    return None
+
+                try:
+                    var = self.named_values[expr.lhs.name]
+                except KeyError:
+                    return self.error_value('undeclared variable {!r}'.format(expr.lhs.name))
+
+                self.builder.store(rhs_val, var)
+
+                return rhs_val
+
             # Rewrite to function call if user-defined.
             if expr.op not in _builtin_ops:
                 call = ast.CallExpr(ast.VariableExpr('binary' + expr.op), [expr.lhs, expr.rhs])
@@ -117,20 +139,19 @@ class Codegen:
             if not start_val:
                 return None
 
+            alloca = self.add_alloca(expr.name)
+            self.builder.store(start_val, alloca)
+
             func = self.builder.block.parent
-            pre_header_block = self.builder.block
             loop_block = func.append_basic_block('loop')
 
             self.builder.branch(loop_block)
             self.builder.position_at_end(loop_block)
 
-            var = self.builder.phi(ir.DoubleType(), name=expr.name)
-            var.add_incoming(start_val, pre_header_block)
-
             sentinel = object()
             old_val = self.named_values.get(expr.name, sentinel)
             try:
-                self.named_values[expr.name] = var
+                self.named_values[expr.name] = alloca
 
                 if not self.expr(expr.body):
                     return None
@@ -139,7 +160,10 @@ class Codegen:
                 if not step_val:
                     return None
 
-                next_var = self.builder.fadd(var, step_val, name='nextvar')
+                next_var = self.builder.fadd(self.builder.load(alloca, name='loopvar'),
+                                             step_val,
+                                             name='nextvar')
+                self.builder.store(next_var, alloca)
 
                 end_val = self.expr(expr.end)
                 if not end_val:
@@ -149,7 +173,6 @@ class Codegen:
 
                 end_block = func.append_basic_block('endfor')
 
-                var.add_incoming(next_var, self.builder.block)
                 self.builder.cbranch(end_val, loop_block, end_block)
                 self.builder.position_at_end(end_block)
             finally:
@@ -183,13 +206,22 @@ class Codegen:
             if func.basic_blocks:
                 return self.error_value('function {!r} already defined'.format(stmt.proto.name))
 
-            bb = func.append_basic_block(name='entry')
+            # The entry basic block just holds alloca instructions. The IRBuilder
+            # in the llvmlite LLVM bindings doesn't support restoring its position
+            # after a jump to the end of a basic block.
+            entry = func.append_basic_block(name='entry')
+            bb = func.append_basic_block(name='prologue')
+
+            self.builder.position_at_end(entry)
+            self.builder.branch(bb)
             self.builder.position_at_end(bb)
 
             self.named_values.clear()
 
             for arg in func.args:
-                self.named_values[arg.name] = arg
+                alloca = self.add_alloca(arg.name)
+                self.builder.store(arg, alloca)
+                self.named_values[arg.name] = alloca
 
             result = self.expr(stmt.body)
 
