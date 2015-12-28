@@ -88,6 +88,18 @@ class ForToken(Token):
         return ast.ForExpr(name, start, end, step, body)
 
 
+@grammar.token(r'\blet\b')
+class LetToken(Token):
+    def unary(self, parser):
+        name = parser.expect(IdentToken).value
+        parser.expect(OperatorToken('='))
+        init = parser.expression()
+        parser.expect(IdentToken('in'))
+        body = parser.expression()
+
+        return ast.LetExpr(name, init, body)
+
+
 @grammar.token(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b')
 class IdentToken(Token):
     def unary(self, parser):

@@ -178,8 +178,28 @@ class Codegen:
             finally:
                 if old_val is not sentinel:
                     self.named_values[expr.name] = old_val
+                else:
+                    del self.named_values[expr.name]
 
             return ir.Constant(ir.DoubleType(), 0.0)
+        elif isinstance(expr, ast.LetExpr):
+            init_val = self.expr(expr.init)
+            if not init_val:
+                return None
+
+            sentinel = object()
+            old_val = self.named_values.get(expr.name, sentinel)
+            try:
+                var = self.add_alloca(expr.name)
+                self.named_values[expr.name] = var
+                self.builder.store(init_val, var)
+                return self.expr(expr.body)
+            finally:
+                if old_val is not sentinel:
+                    self.named_values[expr.name] = old_val
+                else:
+                    del self.named_values[expr.name]
+
         else:
             raise RuntimeError('Unexpected expression type: {!r}'.format(expr))
 
