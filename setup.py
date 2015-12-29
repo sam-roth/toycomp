@@ -11,6 +11,7 @@ setup(
     description='',
     install_requires=[
         'llvmlite',
-        'gnureadline'
+        'gnureadline',
+        'PyYAML',
     ]
 )

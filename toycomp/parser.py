@@ -18,14 +18,27 @@ def _parse_proto(parser):
 
     parser.expect(LParenToken)
 
-    args = []
+    params = []
+
     while isinstance(parser.token_stream.current(), IdentToken):
-        args.append(parser.token_stream.current().value)
+        arg_name = parser.token_stream.current().value
         parser.token_stream.next()
+
+        if parser.take(OperatorToken(':')):
+            typename = parser.expression()
+        else:
+            typename = None
+
+        params.append(ast.FormalParamDecl(arg_name, typename))
 
     parser.expect(RParenToken)
 
-    return ast.Prototype(name + suffix, args)
+    if parser.take(OperatorToken('->')):
+        result_typename = parser.expression()
+    else:
+        result_typename = None
+
+    return ast.Prototype(name + suffix, params, result_typename)
 
 
 @grammar.token(r'\bdef\b')
@@ -33,6 +46,7 @@ class DefToken(Token):
     def unary(self, parser):
         proto = _parse_proto(parser)
         body = parser.expression()
+        parser.take(OperatorToken(';'))
 
         return ast.Function(proto, body)
 

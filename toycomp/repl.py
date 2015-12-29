@@ -4,7 +4,7 @@ import ctypes
 import faulthandler
 import atexit
 
-from toycomp import ast
+from toycomp import ast, typechecker, nameres, user_op_rewriter
 from llvmlite import binding as llvm
 
 from . import parser, pratt, codegen, color, nativelib
@@ -27,6 +27,9 @@ def main_loop():
     anon_count = 0
 
     cg = codegen.Codegen()
+    uo = user_op_rewriter.UserOpRewriter()
+    tc = typechecker.Typechecker()
+    nr = nameres.NameResolver()
     tokenizer = pratt.Tokenizer(parser.grammar)
     tokens = []
 
@@ -59,11 +62,31 @@ def main_loop():
                 print(color.color('blue', repr(astval)))
                 for stmt in astval:
                     if isinstance(stmt, ast.Stmt):
-                        print(color.color('cyan', cg.stmt(stmt)))
+                        if isinstance(stmt, ast.Function):
+                            uo.handle_function(stmt)
+                            nr.handle_function(stmt)
+                            tc.handle_function(stmt)
+                        elif isinstance(stmt, ast.Prototype):
+                            nr.declare(stmt)
+
+                        code = cg.stmt(stmt)
+
+                        if code:
+                            print(color.color('cyan', code))
+                            if isinstance(stmt, ast.Function):
+                                proto = stmt.proto
+                            else:
+                                proto = stmt
+
+                            if isinstance(proto, ast.Prototype):
+                                print('=>', color.color('green', proto.name))
                     elif isinstance(stmt, ast.Expr):
                         proto = ast.Prototype('__anon{}'.format(anon_count), [])
                         anon_count += 1
                         func = ast.Function(proto, stmt)
+                        uo.handle_function(func)
+                        nr.handle_function(func)
+                        tc.handle_function(func)
                         code = cg.stmt(func)
                         if code:
                             print(color.color('cyan', code))
@@ -77,6 +100,7 @@ def main_loop():
                             cfunc = ctypes.CFUNCTYPE(ctypes.c_double)(pfunc)
 
                             res = cfunc()
+
                             print('=>', color.color('green', res))
                     elif stmt is None:
                         pass

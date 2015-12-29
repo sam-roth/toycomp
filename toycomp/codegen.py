@@ -3,7 +3,7 @@ from llvmlite import ir
 from . import ast, color
 
 
-_builtin_ops = {'+', '-', '*', '<'}
+builtin_ops = {'+', '-', '*', '<'}
 
 
 class Codegen:
@@ -50,7 +50,7 @@ class Codegen:
                 return rhs_val
 
             # Rewrite to function call if user-defined.
-            if expr.op not in _builtin_ops:
+            if expr.op not in builtin_ops:
                 call = ast.CallExpr(ast.VariableExpr('binary' + expr.op), [expr.lhs, expr.rhs])
                 return self.expr(call)
 
