@@ -1,11 +1,13 @@
 import collections
 from contextlib import contextmanager
 
-from toycomp import color
+from toycomp import color, compilepass, user_op_rewriter
 from . import ast, types
 
 
-class NameResolver(ast.ASTVisitor):
+class NameResolver(ast.ASTVisitor, compilepass.Pass):
+    dependencies = (user_op_rewriter.UserOpRewriter,)
+
     def __init__(self):
         self.globals = {
             'double': ast.TypeDecl('double', types.double_ty),

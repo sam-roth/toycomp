@@ -1,7 +1,7 @@
-from toycomp import ast, codegen
+from toycomp import ast, codegen, compilepass
 
 
-class UserOpRewriter(ast.ASTRewriter):
+class UserOpRewriter(ast.ASTRewriter, compilepass.Pass):
     """
     This `ExprRewriter` rewrites `BinaryExprs` for user-defined operators into
     function calls for the typechecker's sake.

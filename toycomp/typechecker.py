@@ -1,11 +1,10 @@
 from . import types, color
 
-from toycomp import ast
+from toycomp import ast, compilepass, nameres
 
 
-class Typechecker(ast.ASTVisitor):
-    def __init__(self):
-        pass
+class Typechecker(ast.ASTVisitor, compilepass.Pass):
+    dependencies = (nameres.NameResolver,)
 
     def emit_error(self, msg, *, node=None):
         print(color.color('magenta', 'Error: ' + str(msg)))

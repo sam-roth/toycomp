@@ -4,7 +4,7 @@ import ctypes
 import faulthandler
 import atexit
 
-from toycomp import ast, typechecker, nameres, user_op_rewriter
+from toycomp import ast, typechecker, nameres, user_op_rewriter, compilepass
 from llvmlite import binding as llvm
 
 from . import parser, pratt, codegen, color, nativelib
@@ -27,13 +27,11 @@ def main_loop():
     anon_count = 0
 
     cg = codegen.Codegen()
-    uo = user_op_rewriter.UserOpRewriter()
-    nr = nameres.NameResolver()
-    tc = typechecker.Typechecker()
-
-    def run_passes(node):
-        return all([pass_.visit(node)
-                    for pass_ in [uo, nr, tc]])
+    pm = compilepass.PassManager([
+        user_op_rewriter.UserOpRewriter(),
+        nameres.NameResolver(),
+        typechecker.Typechecker(),
+    ])
 
     tokenizer = pratt.Tokenizer(parser.grammar)
     tokens = []
@@ -67,7 +65,7 @@ def main_loop():
                 print(color.color('blue', repr(astval)))
                 for stmt in astval:
                     if isinstance(stmt, ast.Stmt):
-                        run_passes(stmt)
+                        pm.visit(stmt)
 
                         code = cg.stmt(stmt)
 
@@ -85,7 +83,7 @@ def main_loop():
                         anon_count += 1
                         func = ast.Function(proto, stmt)
 
-                        if run_passes(func):
+                        if pm.visit(func):
                             code = cg.stmt(func)
                         else:
                             code = None

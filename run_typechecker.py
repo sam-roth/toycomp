@@ -1,4 +1,9 @@
-from toycomp import parser, nameres, typechecker, autorepr, user_op_rewriter
+from toycomp import (parser,
+                     nameres,
+                     typechecker,
+                     autorepr,
+                     user_op_rewriter,
+                     compilepass)
 
 code = '''
 
@@ -11,12 +16,13 @@ def foo(x:int y:double) -> double
 
 tree = list(parser.parse(code))
 
-ow = user_op_rewriter.UserOpRewriter()
-nr = nameres.NameResolver()
-tc = typechecker.Typechecker()
+pm = compilepass.PassManager([
+    typechecker.Typechecker(),
+    nameres.NameResolver(),
+    user_op_rewriter.UserOpRewriter(),
+])
 
-for pass_ in [ow, nr, tc]:
-    for node in tree:
-        pass_.visit(node)
+for node in tree:
+    pm.visit(node)
 
 print(autorepr.yaml_dump_all(tree))
