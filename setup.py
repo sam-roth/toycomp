@@ -13,5 +13,6 @@ setup(
         'llvmlite',
         'gnureadline',
         'PyYAML',
+        'pytest',
     ]
 )

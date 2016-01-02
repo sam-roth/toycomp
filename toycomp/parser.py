@@ -54,7 +54,10 @@ class DefToken(Token):
 @grammar.token(r'\bextern\b')
 class ExternToken(Token):
     def unary(self, parser):
-        return _parse_proto(parser)
+        result = _parse_proto(parser)
+        parser.take(OperatorToken(';'))
+
+        return result
 
 
 @grammar.token(r'\bthen\b')
