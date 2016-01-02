@@ -3,26 +3,30 @@ from . import types, color
 from toycomp import ast
 
 
-class Typechecker(ast.ExprVisitor):
+class Typechecker(ast.ASTVisitor):
     def __init__(self):
         pass
 
     def emit_error(self, msg, *, node=None):
         print(color.color('magenta', 'Error: ' + str(msg)))
 
-    def handle_proto(self, proto):
-        # Only doubles allowed for now
+    def visit_FormalParamDecl(self, decl):
         ok = True
-        for param in proto.params:
-            if param.typename:
-                if not isinstance(param.typename.decl, ast.TypeDecl):
-                    ok = False
-                    if not isinstance(param.typename.decl, ast.Undeclared):
-                        self.emit_error('not a type name', node=param.typename)
-                else:
-                    param.decl_ty = param.typename.decl.ty
+
+        if decl.typename:
+            if not isinstance(decl.typename.decl, ast.TypeDecl):
+                ok = False
+                if not isinstance(decl.typename.decl, ast.Undeclared):
+                    self.emit_error('not a type name', node=decl.typename)
             else:
-                param.decl_ty = types.double_ty
+                decl.decl_ty = decl.typename.decl.ty
+        else:
+            decl.decl_ty = types.double_ty
+
+        return ok
+
+    def visit_Prototype(self, proto):
+        ok = all([self.visit(param) for param in proto.params])
 
         result_typename = None
         if not proto.result_typename:
@@ -40,8 +44,8 @@ class Typechecker(ast.ExprVisitor):
 
         return ok
 
-    def handle_function(self, func):
-        proto_ok = self.handle_proto(func.proto)
+    def visit_Function(self, func):
+        proto_ok = self.visit_Prototype(func.proto)
         body_ok = self.visit(func.body)
 
         return body_ok and proto_ok

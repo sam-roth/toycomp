@@ -86,7 +86,7 @@ class LetExpr(Expr, Decl):
 
 
 # noinspection PyPep8Naming
-class ExprVisitor(metaclass=ABCMeta):
+class ASTVisitor(metaclass=ABCMeta):
     @abstractmethod
     def visit_NumberExpr(self, expr):
         pass
@@ -115,13 +115,41 @@ class ExprVisitor(metaclass=ABCMeta):
     def visit_LetExpr(self, expr):
         pass
 
+    @abstractmethod
+    def visit_Prototype(self, stmt):
+        pass
+
+    @abstractmethod
+    def visit_Function(self, stmt):
+        pass
+
+    @abstractmethod
+    def visit_FormalParamDecl(self, decl):
+        pass
+
     def visit(self, expr):
         type_name = type(expr).__name__
         method_name = 'visit_' + type_name
         return getattr(self, method_name)(expr)
 
 
-class ExprRewriter(ExprVisitor):
+class ASTRewriter(ASTVisitor):
+    def visit_FormalParamDecl(self, decl):
+        if decl.typename:
+            decl.typename = self.visit(decl.typename)
+        return decl
+
+    def visit_Prototype(self, stmt):
+        stmt.params = [self.visit(p) for p in stmt.params]
+        if stmt.result_typename:
+            stmt.result_typename = self.visit(stmt.result_typename)
+        return stmt
+
+    def visit_Function(self, stmt):
+        stmt.proto = self.visit(stmt.proto)
+        stmt.body = self.visit(stmt.body)
+        return stmt
+
     def visit_VariableExpr(self, expr):
         return expr
 

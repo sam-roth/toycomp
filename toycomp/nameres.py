@@ -5,13 +5,19 @@ from toycomp import color
 from . import ast, types
 
 
-class NameResolver(ast.ExprVisitor):
+class NameResolver(ast.ASTVisitor):
     def __init__(self):
         self.globals = {
             'double': ast.TypeDecl('double', types.double_ty),
             'int': ast.TypeDecl('int', types.int_ty),
         }
         self.scope = collections.ChainMap(self.globals)
+
+    def visit_FormalParamDecl(self, decl):
+        return self.declare(decl)
+
+    def visit_Prototype(self, stmt):
+        return self.declare(stmt)
 
     def emit_error(self, msg, *, node=None):
         print(color.color('magenta', 'Error: ' + str(msg)))
@@ -28,14 +34,14 @@ class NameResolver(ast.ExprVisitor):
         self.scope[decl.name] = decl
         return True
 
-    def handle_function(self, func):
+    def visit_Function(self, func):
         """
         :type func: ast.Function
         """
-        decl_ok = self.declare(func.proto)
+        decl_ok = self.visit(func.proto)
 
         with self.new_scope():
-            param_ok = all([self.declare(param) for param in func.proto.params])
+            param_ok = all([self.visit(param) for param in func.proto.params])
             param_tys_ok = all([self.visit(param.typename)
                                 for param in func.proto.params
                                 if param.typename])

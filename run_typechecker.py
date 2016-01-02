@@ -17,6 +17,6 @@ tc = typechecker.Typechecker()
 
 for pass_ in [ow, nr, tc]:
     for node in tree:
-        pass_.handle_function(node)
+        pass_.visit(node)
 
 print(autorepr.yaml_dump_all(tree))

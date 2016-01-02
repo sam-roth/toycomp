@@ -28,8 +28,13 @@ def main_loop():
 
     cg = codegen.Codegen()
     uo = user_op_rewriter.UserOpRewriter()
-    tc = typechecker.Typechecker()
     nr = nameres.NameResolver()
+    tc = typechecker.Typechecker()
+
+    def run_passes(node):
+        return all([pass_.visit(node)
+                    for pass_ in [uo, nr, tc]])
+
     tokenizer = pratt.Tokenizer(parser.grammar)
     tokens = []
 
@@ -62,12 +67,7 @@ def main_loop():
                 print(color.color('blue', repr(astval)))
                 for stmt in astval:
                     if isinstance(stmt, ast.Stmt):
-                        if isinstance(stmt, ast.Function):
-                            uo.handle_function(stmt)
-                            nr.handle_function(stmt)
-                            tc.handle_function(stmt)
-                        elif isinstance(stmt, ast.Prototype):
-                            nr.declare(stmt)
+                        run_passes(stmt)
 
                         code = cg.stmt(stmt)
 
@@ -84,10 +84,12 @@ def main_loop():
                         proto = ast.Prototype('__anon{}'.format(anon_count), [])
                         anon_count += 1
                         func = ast.Function(proto, stmt)
-                        uo.handle_function(func)
-                        nr.handle_function(func)
-                        tc.handle_function(func)
-                        code = cg.stmt(func)
+
+                        if run_passes(func):
+                            code = cg.stmt(func)
+                        else:
+                            code = None
+
                         if code:
                             print(color.color('cyan', code))
 
