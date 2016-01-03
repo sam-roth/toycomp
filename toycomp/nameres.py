@@ -19,7 +19,16 @@ class NameResolver(ast.ASTVisitor, compilepass.Pass):
         return self.declare(decl)
 
     def visit_Prototype(self, stmt):
-        return self.declare(stmt)
+        param_tys_ok = all([self.visit(param.typename)
+                            for param in stmt.params
+                            if param.typename])
+
+        result_typename_ok = True
+
+        if stmt.result_typename:
+            result_typename_ok = self.visit(stmt.result_typename)
+
+        return self.declare(stmt) and result_typename_ok and param_tys_ok
 
     def emit_error(self, msg, *, node=None):
         print(color.color('magenta', 'Error: ' + str(msg)))
@@ -44,12 +53,12 @@ class NameResolver(ast.ASTVisitor, compilepass.Pass):
 
         with self.new_scope():
             param_ok = all([self.visit(param) for param in func.proto.params])
-            param_tys_ok = all([self.visit(param.typename)
-                                for param in func.proto.params
-                                if param.typename])
+            # param_tys_ok = all([self.visit(param.typename)
+            #                     for param in func.proto.params
+            #                     if param.typename])
             body_ok = self.visit(func.body)
 
-            return all([decl_ok, param_ok, param_tys_ok, body_ok])
+            return all([decl_ok, param_ok, body_ok])
 
     @contextmanager
     def new_scope(self):

@@ -47,11 +47,18 @@ class Typechecker(ast.ASTVisitor, compilepass.Pass):
         proto_ok = self.visit_Prototype(func.proto)
         body_ok = self.visit(func.body)
 
+        if func.body.ty != func.proto.decl_ty.result:
+            self.emit_error('function declared to return {} actually returns {}'.format(func.proto.decl_ty.result,
+                                                                                        func.body.ty),
+                            node=func)
+            return None
+
         return body_ok and proto_ok
 
     def visit_ForExpr(self, expr):
         start_ok = self.visit(expr.start)
         expr.decl_ty = expr.start.ty
+        expr.ty = types.double_ty  # for always returns 0.0
 
         end_ok = self.visit(expr.end)
         step_ok = self.visit(expr.step)
@@ -72,9 +79,6 @@ class Typechecker(ast.ASTVisitor, compilepass.Pass):
         return True
 
     def visit_BinaryExpr(self, expr):
-        # TODO: Analyze this correctly. Must add decl
-        # ptr to BinaryExpr for overloading.
-
         left_ok = self.visit(expr.lhs)
         right_ok = self.visit(expr.rhs)
 
@@ -96,6 +100,10 @@ class Typechecker(ast.ASTVisitor, compilepass.Pass):
 
     def visit_IfExpr(self, expr):
         test_ok = self.visit(expr.test)
+        if expr.test.ty != types.double_ty:
+            self.emit_error('test expression of `if` must have type double', node=expr.test)
+            test_ok = False
+
         true_ok = self.visit(expr.true)
         false_ok = self.visit(expr.false)
 

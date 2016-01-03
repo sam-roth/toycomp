@@ -67,7 +67,7 @@ def main_loop():
                     if isinstance(stmt, ast.Stmt):
                         pm.visit(stmt)
 
-                        code = cg.stmt(stmt)
+                        code = cg.visit(stmt)
 
                         if code:
                             print(color.color('cyan', code))
@@ -84,7 +84,7 @@ def main_loop():
                         func = ast.Function(proto, stmt)
 
                         if pm.visit(func):
-                            code = cg.stmt(func)
+                            code = cg.visit(func)
                         else:
                             code = None
 

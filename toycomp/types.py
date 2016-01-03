@@ -27,6 +27,11 @@ class FunctionType:
     def __repr__(self):
         return 'FunctionType({!r}, {!r})'.format(self.result, self.params)
 
+    @property
+    def llvm_ty(self):
+        return ir.FunctionType(self.result.llvm_ty,
+                               [t.llvm_ty for t in self.params])
+
 
 double_ty = PrimitiveType('double', ir.DoubleType())
 int_ty = PrimitiveType('int', ir.IntType(32))

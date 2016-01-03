@@ -89,6 +89,7 @@ class LetExpr(Expr, Decl):
 class ASTVisitor(metaclass=ABCMeta):
     @abstractmethod
     def visit_NumberExpr(self, expr):
+        """:type expr: NumberExpr"""
         pass
 
     @abstractmethod
