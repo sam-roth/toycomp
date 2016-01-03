@@ -49,7 +49,7 @@ class Codegen(ast.ASTVisitor):
         # generate loop test
         end_val = self.visit(expr.end)
         if end_val:
-            end_val_bool = self.builder.fcmp_ordered('!=',
+            end_val_bool = self.builder.fcmp_ordered('==',
                                                      end_val,
                                                      ir.Constant(ir.DoubleType(), 0.0))
         else:
