@@ -17,4 +17,6 @@ def alphabet()
     (for n = 0, n < 26, 1 in putchard(n + 97)):
     putchard(10);
 
-alphabet();
+def mainf()
+    alphabet():
+    0;
