@@ -9,6 +9,7 @@ class UserOpRewriter(ast.ASTRewriter, compilepass.Pass):
     def visit_BinaryExpr(self, expr):
         if expr.op not in codegen.builtin_ops:
             return ast.CallExpr(ast.VariableExpr('binary{}'.format(expr.op)),
-                                [expr.lhs, expr.rhs])
+                                [self.visit(expr.lhs),
+                                 self.visit(expr.rhs)])
 
-        return expr
+        return super().visit_BinaryExpr(expr)
