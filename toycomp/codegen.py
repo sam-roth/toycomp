@@ -66,8 +66,9 @@ class Codegen(ast.ASTVisitor):
         # generate increment
         if alloca:
             indvar_val = self.builder.load(alloca)
+            step_val = self.visit(expr.step)
             new_indvar_val = self.builder.fadd(indvar_val,
-                                               ir.Constant(ir.DoubleType(), 1.0),
+                                               step_val,
                                                expr.name)
             self.builder.store(new_indvar_val, alloca)
 
