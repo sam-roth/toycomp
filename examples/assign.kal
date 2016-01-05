@@ -1,0 +1,11 @@
+
+extern putchard(ch)
+
+def binary : 1 (a b) b;
+
+def mainf()
+    let x = 97 in
+        putchard(x):
+        x = 98:
+        putchard(x):
+        putchard(10);

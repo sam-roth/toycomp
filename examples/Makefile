@@ -1,6 +1,6 @@
 LLVM_CONFIG     ?= "llvm-config"
 TARGET_TRIPLE   ?= $(shell "${LLVM_CONFIG}" --host-target)
-BINARIES        := mandelbrot alphabet
+BINARIES        := mandelbrot alphabet assign
 
 .PHONY: all
 all: ${BINARIES}
