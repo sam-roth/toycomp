@@ -1,4 +1,7 @@
-from toycomp import ast, codegen, compilepass
+from toycomp import ast, compilepass
+
+
+builtin_ops = {'+', '-', '*', '<', '='}
 
 
 class UserOpRewriter(ast.ASTRewriter, compilepass.Pass):
@@ -7,9 +10,10 @@ class UserOpRewriter(ast.ASTRewriter, compilepass.Pass):
     function calls for the typechecker's sake.
     """
     def visit_BinaryExpr(self, expr):
-        if expr.op not in codegen.builtin_ops:
+        if expr.op not in builtin_ops:
             return ast.CallExpr(ast.VariableExpr('binary{}'.format(expr.op)),
                                 [self.visit(expr.lhs),
                                  self.visit(expr.rhs)])
 
         return super().visit_BinaryExpr(expr)
+

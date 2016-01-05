@@ -2,8 +2,6 @@ from llvmlite import ir
 
 from . import ast, color
 
-builtin_ops = {'+', '-', '*', '<'}
-
 
 def _llvm_ty(ty):
     if ty is None:
