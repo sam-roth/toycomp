@@ -1,4 +1,5 @@
 from toycomp.pratt import Parser
+from toycomp.sourceloc import SourceFile
 from .pratt import Token, Grammar, Tokenizer
 from . import ast
 
@@ -187,9 +188,10 @@ class OperatorToken(Token):
         return ast.CallExpr(ast.VariableExpr('unary' + self.value), [parser.expression()])
 
 
-def parse(program):
+def parse(program, *, name=None):
+    source_file = SourceFile(program, name=name or '<string>')
     t = Tokenizer(grammar)
-    return Parser(t.tokenize(program)).parse()
+    return Parser(t.tokenize(program), file=source_file).parse()
 
 
 if __name__ == '__main__':

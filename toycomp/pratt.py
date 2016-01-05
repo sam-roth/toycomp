@@ -1,5 +1,7 @@
 import re
 
+from toycomp.sourceloc import SourceRange
+
 
 class Grammar:
     def __init__(self):
@@ -76,6 +78,7 @@ class Token:
         self.value = value
         self.lineno = None
         self.offset = None
+        self.pos = None
 
     def __repr__(self):
         return '{}({!r})'.format(type(self).__name__, self.value)
@@ -108,6 +111,8 @@ class Tokenizer:
     def tokenize(self, text):
         line_num = 1
         line_start = 0
+        offset = 0
+        pos = 0
 
         for mo in re.finditer(self._regex, text, re.MULTILINE):
             kindname = mo.lastgroup
@@ -120,8 +125,11 @@ class Tokenizer:
             else:
                 t = self._grammar.tokens[kindname](value)
                 if not t.ignore:
+                    pos = mo.start()
+                    offset = pos - line_start
                     t.lineno = line_num
-                    t.offset = mo.start() - line_start
+                    t.offset = offset
+                    t.pos = pos
                     yield t
 
             value_lines = sum(1 for c in value if c == '\n')
@@ -129,21 +137,45 @@ class Tokenizer:
                 line_num += value_lines
                 line_start += max(i for (i, c) in enumerate(value) if c == '\n') + 1
 
-        yield EndToken(None)
+        et = EndToken(None)
+        et.lineno = line_num
+        et.offset = offset
+        et.pos = pos
+        yield et
 
 
 class Parser:
-    def __init__(self, tokens):
+    def __init__(self, tokens, file=None):
+        self.file = file
         self.token_stream = BidirectionalIterator(tokens)
 
+    @property
+    def pos(self):
+        return self.token_stream.current().pos
+
+    def _make_source_range(self, start_pos, end_pos):
+        if self.file:
+            return SourceRange(self.file.offset_to_location(start_pos),
+                               self.file.offset_to_location(end_pos))
+
+        return None
+
     def expression(self, rbp=0):
+        start_pos = self.pos
         t = self.token_stream.current()
         self.token_stream.next()
         left = t.unary(self)
+        end_pos = self.pos
+        left.source_range = self._make_source_range(start_pos, end_pos)
+
         while rbp < self.token_stream.current().lbp:
+            # start_pos = self.pos
             t = self.token_stream.current()
             self.token_stream.next()
             left = t.binary(self, left)
+            end_pos = self.pos
+            left.source_range = self._make_source_range(start_pos, end_pos)
+
         return left
 
     def take(self, tokenty):

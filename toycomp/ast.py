@@ -24,6 +24,7 @@ class Undeclared(Decl):
 
 class AST(metaclass=ABCMeta):
     ty = None
+    source_range = None
 
 
 class Expr(AST, metaclass=ABCMeta):
