@@ -153,6 +153,12 @@ class Parser:
     def pos(self):
         return self.token_stream.current().pos
 
+    @property
+    def source_loc(self):
+        if self.file:
+            return self.file.offset_to_location(self.pos)
+        return None
+
     def _make_source_range(self, start_pos, end_pos):
         if self.file:
             return SourceRange(self.file.offset_to_location(start_pos),

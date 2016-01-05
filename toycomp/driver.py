@@ -16,7 +16,7 @@ class Driver:
         self._diags = DiagnosticsEngine(DiagnosticPrinter(sys.stderr))
         self._pm = PassManager([
             UserOpRewriter(),
-            NameResolver(),
+            NameResolver(self._diags),
             Typechecker(self._diags),
         ])
 

@@ -4,7 +4,12 @@ from toycomp import types
 from toycomp.autorepr import autorepr
 
 
-class Decl(metaclass=ABCMeta):
+class AST(metaclass=ABCMeta):
+    ty = None
+    source_range = None
+
+
+class Decl(AST, metaclass=ABCMeta):
     name = None
     llvm_value = None
     decl_ty = None
@@ -20,11 +25,6 @@ class TypeDecl(Decl):
 @autorepr()
 class Undeclared(Decl):
     pass
-
-
-class AST(metaclass=ABCMeta):
-    ty = None
-    source_range = None
 
 
 class Expr(AST, metaclass=ABCMeta):

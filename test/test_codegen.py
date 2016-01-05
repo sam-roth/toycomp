@@ -20,9 +20,10 @@ from toycomp.diagnostics import DiagnosticsEngine, DiagnosticPrinter
 
 @pytest.fixture
 def passmgr():
+    engine = DiagnosticsEngine(DiagnosticPrinter(sys.stderr))
     return compilepass.PassManager([
-        nameres.NameResolver(),
-        typechecker.Typechecker(DiagnosticsEngine(DiagnosticPrinter(sys.stderr))),
+        nameres.NameResolver(engine),
+        typechecker.Typechecker(engine),
         user_op_rewriter.UserOpRewriter(),
     ])
 

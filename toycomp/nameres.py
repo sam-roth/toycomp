@@ -1,13 +1,18 @@
 import collections
 from contextlib import contextmanager
 
-from . import ast, types, color, compilepass, user_op_rewriter
+from . import ast, types, compilepass, user_op_rewriter
+from .translation import *
 
 
 class NameResolver(ast.ASTVisitor, compilepass.Pass):
     dependencies = (user_op_rewriter.UserOpRewriter,)
 
-    def __init__(self):
+    def __init__(self, diags):
+        """
+        :param toycomp.diagnostics.DiagnosticsEngine diags: the diagnostics engine
+        """
+        self.diags = diags
         self.globals = {
             'double': ast.TypeDecl('double', types.double_ty),
             'int': ast.TypeDecl('int', types.int_ty),
@@ -29,16 +34,14 @@ class NameResolver(ast.ASTVisitor, compilepass.Pass):
 
         return self.declare(stmt) and result_typename_ok and param_tys_ok
 
-    def emit_error(self, msg, *, node=None):
-        print(color.color('magenta', 'Error: ' + str(msg)))
-
     def declare(self, decl):
         """
         :type decl: ast.Decl
         """
 
         if decl.name in self.scope.maps[0] and self.scope[decl.name] is not decl:
-            self.emit_error('redeclaration of {!r} in same scope'.format(decl.name), node=decl)
+            self.diags.error(decl,
+                             tr('redeclaration of {!r} in same scope').format(decl.name))
             return False
 
         self.scope[decl.name] = decl
@@ -109,7 +112,8 @@ class NameResolver(ast.ASTVisitor, compilepass.Pass):
             decl = self.scope[expr.name]
         except KeyError:
             expr.decl = ast.Undeclared()
-            self.emit_error('undeclared symbol {!r}'.format(expr.name), node=expr)
+            self.diags.error(expr,
+                             tr('undeclared symbol {!r}').format(expr.name))
             return False
 
         expr.decl = decl

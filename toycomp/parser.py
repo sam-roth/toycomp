@@ -1,5 +1,5 @@
 from toycomp.pratt import Parser
-from toycomp.sourceloc import SourceFile
+from toycomp.sourceloc import SourceFile, SourceRange
 from .pratt import Token, Grammar, Tokenizer
 from . import ast
 
@@ -22,7 +22,9 @@ def _parse_proto(parser):
     params = []
 
     while isinstance(parser.token_stream.current(), IdentToken):
-        arg_name = parser.token_stream.current().value
+        start_loc = parser.source_loc
+        token = parser.token_stream.current()
+        arg_name = token.value
         parser.token_stream.next()
 
         if parser.take(OperatorToken(':')):
@@ -30,7 +32,10 @@ def _parse_proto(parser):
         else:
             typename = None
 
-        params.append(ast.FormalParamDecl(arg_name, typename))
+        decl = ast.FormalParamDecl(arg_name, typename)
+        if start_loc and parser.source_loc:
+            decl.source_range = SourceRange(start_loc, parser.source_loc)
+        params.append(decl)
 
     parser.expect(RParenToken)
 
