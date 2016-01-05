@@ -3,6 +3,7 @@ Simple tests to see if codegen works without errors on valid inputs and fails on
 
 If these tests fail, codegen is broken, but if they pass, it does **not** mean that codegen actually works.
 """
+import sys
 
 import pytest
 from llvmlite import ir
@@ -14,13 +15,14 @@ from toycomp import (
     user_op_rewriter,
     parser
 )
+from toycomp.diagnostics import DiagnosticsEngine, DiagnosticPrinter
 
 
 @pytest.fixture
 def passmgr():
     return compilepass.PassManager([
         nameres.NameResolver(),
-        typechecker.Typechecker(),
+        typechecker.Typechecker(DiagnosticsEngine(DiagnosticPrinter(sys.stderr))),
         user_op_rewriter.UserOpRewriter(),
     ])
 
