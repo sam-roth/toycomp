@@ -1,8 +1,7 @@
 import collections
 from contextlib import contextmanager
 
-from toycomp import color, compilepass, user_op_rewriter
-from . import ast, types
+from . import ast, types, color, compilepass, user_op_rewriter
 
 
 class NameResolver(ast.ASTVisitor, compilepass.Pass):
