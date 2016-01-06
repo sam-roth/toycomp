@@ -5,6 +5,9 @@ BINARIES        := mandelbrot alphabet assign
 .PHONY: all
 all: ${BINARIES}
 
+.PHONY: errors
+errors: compile-errors/testbaddecl compile-errors/testbadtype
+
 .PHONY: clean
 clean:
 	rm -f ${BINARIES}
