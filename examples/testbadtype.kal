@@ -2,4 +2,4 @@ extern foo() -> int;
 extern bar(x:double) -> double;
 
 def baz()
-    bar(foo());
+    bar(foo());  # expected failure
