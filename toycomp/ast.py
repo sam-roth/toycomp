@@ -22,6 +22,14 @@ class TypeDecl(Decl):
         self.ty = ty
 
 
+@autorepr('name', 'value', 'ty')
+class ConstDecl(Decl):
+    def __init__(self, name, value, ty):
+        self.name = name
+        self.value = value
+        self.decl_ty = ty
+
+
 @autorepr()
 class Undeclared(Decl):
     pass

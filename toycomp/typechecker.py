@@ -1,5 +1,10 @@
+import contextlib
+
 from . import ast, compilepass, nameres, types
 from .translation import *
+
+
+_comparison_ops = {'==', '<', '>', '<=', '>=', '!='}
 
 
 class Typechecker(ast.ASTVisitor, compilepass.Pass):
@@ -93,7 +98,10 @@ class Typechecker(ast.ASTVisitor, compilepass.Pass):
             self.emit_error(tr('LHS and RHS of infix operator expression must have same type'), node=expr)
             ok = False
 
-        expr.ty = expr.lhs.ty
+        if expr.op in _comparison_ops:
+            expr.ty = types.bool_ty
+        else:
+            expr.ty = expr.lhs.ty
 
         return ok
 
@@ -107,18 +115,19 @@ class Typechecker(ast.ASTVisitor, compilepass.Pass):
 
     def visit_IfExpr(self, expr):
         test_ok = self.visit(expr.test)
-        if expr.test.ty != types.double_ty:
-            self.emit_error(tr('test expression of `if` must have type double'), node=expr.test)
+        if expr.test.ty != types.bool_ty:
+            self.emit_error(tr('test expression of `if` must have type bool'), node=expr.test)
             test_ok = False
 
         true_ok = self.visit(expr.true)
         false_ok = self.visit(expr.false)
 
-        if expr.true.ty != expr.false.ty:
-            self.emit_error(tr('true and false branches of `if` must have same result type'), node=expr)
-            return False
-
-        expr.ty = expr.true.ty
+        if true_ok and false_ok:
+            if expr.true.ty != expr.false.ty:
+                self.emit_error(tr('true and false branches of `if` must have same result type'), node=expr)
+                return False
+            else:
+                expr.ty = expr.true.ty
 
         return all([test_ok, true_ok, false_ok])
 

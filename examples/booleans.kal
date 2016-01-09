@@ -1,0 +1,18 @@
+extern putchard(ch);
+extern putbool(b:bool);
+
+def always_true() -> bool
+    True;
+
+def always_false() -> bool
+    False;
+
+def binary:1(x y) y;
+
+def print_bool(v: bool)
+    putbool(v):
+    putchard(10);
+
+def mainf()
+    print_bool(always_true()):
+    print_bool(always_false());

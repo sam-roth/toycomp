@@ -35,3 +35,4 @@ class FunctionType:
 
 double_ty = PrimitiveType('double', ir.DoubleType())
 int_ty = PrimitiveType('int', ir.IntType(32))
+bool_ty = PrimitiveType('bool', ir.IntType(1))

@@ -1,7 +1,7 @@
 from toycomp import ast, compilepass
 
 
-builtin_ops = {'+', '-', '*', '<', '='}
+builtin_ops = {'+', '-', '*', '<', '=', '==', '<=', '>=', '!='}
 
 
 class UserOpRewriter(ast.ASTRewriter, compilepass.Pass):

@@ -143,7 +143,7 @@ def test_fail_on_undeclared(expr, assert_does_not_compile):
 def test_if(assert_compiles):
     source = '''
     def test_if(x:double) -> double
-        if x
+        if x == 0
             then 1
             else 0
     '''

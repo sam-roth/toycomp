@@ -1,5 +1,6 @@
 import collections
 from contextlib import contextmanager
+from llvmlite import ir
 
 from . import ast, types, compilepass, user_op_rewriter
 from .translation import *
@@ -16,6 +17,9 @@ class NameResolver(ast.ASTVisitor, compilepass.Pass):
         self.globals = {
             'double': ast.TypeDecl('double', types.double_ty),
             'int': ast.TypeDecl('int', types.int_ty),
+            'bool': ast.TypeDecl('bool', types.bool_ty),
+            'True': ast.ConstDecl('True', ir.Constant(ir.IntType(1), 1), types.bool_ty),
+            'False': ast.ConstDecl('False', ir.Constant(ir.IntType(1), 0), types.bool_ty),
         }
         self.scope = collections.ChainMap(self.globals)
 
@@ -55,9 +59,6 @@ class NameResolver(ast.ASTVisitor, compilepass.Pass):
 
         with self.new_scope():
             param_ok = all([self.visit(param) for param in func.proto.params])
-            # param_tys_ok = all([self.visit(param.typename)
-            #                     for param in func.proto.params
-            #                     if param.typename])
             body_ok = self.visit(func.body)
 
             return all([decl_ok, param_ok, body_ok])

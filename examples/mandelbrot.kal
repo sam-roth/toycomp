@@ -1,34 +1,31 @@
 
-def unary! (v)
+def unary! (v:bool) -> bool
     if v
-       then 0
-       else 1;
+       then False
+       else True;
 
 
 def unary- (v)
     0 - v;
 
 
-def binary > 10(lhs rhs)
+def binary > 10(lhs rhs) -> bool
     rhs < lhs;
 
 
-def binary | 5(lhs rhs)
+def binary | 5(lhs:bool rhs:bool) -> bool
     if lhs then
-        1
+        True
     else if rhs then
-        1
+        True
     else
-        0;
+        False;
 
 
-def binary& 6(lhs rhs)
+def binary& 6(lhs:bool rhs:bool) -> bool
     if !lhs
-       then 0
+       then False
        else ! !rhs;
-
-def binary== 9(lhs rhs)
-    !(lhs < rhs | lhs > rhs);
 
 
 def binary : 1(x y) y;

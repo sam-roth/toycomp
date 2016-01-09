@@ -45,14 +45,11 @@ class Codegen(ast.ASTVisitor):
         self.builder.position_at_end(for_block)
 
         # generate loop test
-        end_val = self.visit(expr.end)
-        if end_val:
-            end_val_bool = self.builder.fcmp_ordered('==',
-                                                     end_val,
-                                                     ir.Constant(ir.DoubleType(), 0.0))
-        else:
-            end_val_bool = ir.Constant(ir.IntType(1), 0)
+        end_val_bool = self.visit(expr.end)
+        if not end_val_bool:
             ok = False
+        else:
+            end_val_bool = self.builder.not_(end_val_bool, name='nottmp')
 
         with self.builder.if_then(end_val_bool):
             self.builder.branch(exit_block)
@@ -89,11 +86,6 @@ class Codegen(ast.ASTVisitor):
 
         if not test_val:
             return None
-
-        test_val = self.builder.fcmp_ordered('!=',
-                                             test_val,
-                                             ir.Constant(ir.DoubleType(), 0.0),
-                                             name='ifcond')
 
         with self.builder.if_else(test_val) as (then, else_):
             with then:
@@ -216,14 +208,16 @@ class Codegen(ast.ASTVisitor):
             return b.fsub(l, r, name='subtmp')
         elif op == '*':
             return b.fmul(l, r, name='multmp')
-        elif op == '<':
-            l = b.fcmp_unordered('<', l, r, name='cmptmp')
-            return b.uitofp(l, ir.DoubleType(), name='booltmp')
+        elif op in {'==', '<', '>', '<=', '>=', '!='}:
+            return b.fcmp_unordered(op, l, r, name='cmptmp')
         else:
             self.emit_error('invalid binary operator {!r}'.format(op), node=expr)
             return None
 
     def visit_VariableExpr(self, expr):
+        if isinstance(expr.decl, ast.ConstDecl):
+            return expr.decl.value
+
         ptr = self.decl_values.get(expr.decl)
         if ptr:
             return self.builder.load(ptr, name=expr.name)

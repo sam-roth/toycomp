@@ -1,17 +1,7 @@
 
 extern putchard(x);
 
-def unary ! (v)
-    if v
-        then 0
-        else 1;
-
-def binary >= 10 (x y)
-    if !(x < y)
-        then 1
-        else 0;
-
-def binary : 1 (x y) 0;
+def binary : 1 (x y) y;
 
 def alphabet()
     (for n = 0, n < 26, 1 in putchard(n + 97)):
